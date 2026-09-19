@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>io.md2java</groupId>
-	<artifactId>easyexcelcomparator</artifactId>
+	<artifactId>easyexcel-compare</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name/>
 	<description/>
