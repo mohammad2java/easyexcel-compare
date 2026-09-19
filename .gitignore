@@ -1,5 +1,6 @@
-HELP.md
+README.md
 target/
+/excelcompare/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/

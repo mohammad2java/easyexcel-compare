@@ -33,11 +33,13 @@ public class EasyexcelcomparatorApplication implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         log.info("EasyExcel Comparator Application started successfully.");
+        log.info("current working directory: " + System.getProperty("user.dir"));
         List<ExcelCompareResponse> results = excelCompareService.compareAllFiles();
         for (ExcelCompareResponse result : results) {
             logComparisonResult(result);
         }
         log.info("EasyExcel Comparator Application finished successfully.");
+        log.info(" ");
     }
 
     private void logComparisonResult(ExcelCompareResponse result) {
