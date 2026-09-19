@@ -8,8 +8,6 @@ import io.md2java.easyexcel.config.ExcelCompareProperties;
 import io.md2java.easyexcel.dto.ColumnComparisonResult;
 import io.md2java.easyexcel.dto.ComparisonStatus;
 import io.md2java.easyexcel.dto.ExcelCompareResponse;
-import io.md2java.easyexcel.dto.ExtraRowResult;
-import io.md2java.easyexcel.dto.MissingRowResult;
 import io.md2java.easyexcel.dto.RowComparisonResult;
 import io.md2java.easyexcel.dto.SheetComparisonResult;
 import io.md2java.easyexcel.service.ExcelCompareService;
@@ -60,8 +58,6 @@ public class EasyexcelcomparatorApplication implements CommandLineRunner {
                 .filter(row -> row.getStatus() == ComparisonStatus.MATCH)
                 .count();
         long valueMismatchRows = rows.size() - matchedRows;
-        List<MissingRowResult> missingRows = safeList(sheet.getMissingRows());
-        List<ExtraRowResult> extraRows = safeList(sheet.getExtraRows());
         List<String> warnings = safeList(sheet.getWarnings());
 
         lines.add("   Sheet '" + sheet.getSheetName() + "' - status: " + sheet.getStatus());
@@ -69,9 +65,6 @@ public class EasyexcelcomparatorApplication implements CommandLineRunner {
                 + ", target=" + text(sheet.getTargetRowCount()) + "]");
         lines.add("      matched rows   : " + matchedRows);
         lines.add("      mismatched rows: " + valueMismatchRows);
-        lines.add("      warnings       : " + warnings.size()
-                + " (source-key-not-in-target=" + missingRows.size()
-                + ", target-key-not-in-source=" + extraRows.size() + ")");
         if (sheet.getMessage() != null && !sheet.getMessage().isEmpty()) {
             lines.add("      note: " + sheet.getMessage());
         }

@@ -179,8 +179,9 @@ class ExcelCompareServiceImplTest {
         assertEquals(1, sheet.getExtraRows().size());
         assertTrue(sheet.getWarnings().stream()
                 .anyMatch(warning -> warning.contains("'1002'") && warning.contains("not found in target")));
+        // Extra target keys are reported in extraRows, but no warning is produced for them.
         assertTrue(sheet.getWarnings().stream()
-                .anyMatch(warning -> warning.contains("'1003'") && warning.contains("not present in source")));
+                .noneMatch(warning -> warning.contains("'1003'")));
     }
 
     @Test

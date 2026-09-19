@@ -290,13 +290,10 @@ public class ExcelCompareServiceImpl implements ExcelCompareService {
                         + sourceValues);
             }
             for (int i = pairCount; i < targetRows.size(); i++) {
-                Map<String, String> targetValues = rowToValues(targetRows.get(i), targetData);
                 extraRows.add(ExtraRowResult.builder()
                         .keyValue(keyValue)
-                        .targetValues(targetValues)
+                        .targetValues(rowToValues(targetRows.get(i), targetData))
                         .build());
-                warnings.add("Target key '" + keyValue + "' not present in source row. Target row: "
-                        + targetValues);
             }
         }
 
@@ -305,13 +302,10 @@ public class ExcelCompareServiceImpl implements ExcelCompareService {
                 continue;
             }
             for (Map<Integer, Object> targetRow : targetEntry.getValue()) {
-                Map<String, String> targetValues = rowToValues(targetRow, targetData);
                 extraRows.add(ExtraRowResult.builder()
                         .keyValue(targetEntry.getKey())
-                        .targetValues(targetValues)
+                        .targetValues(rowToValues(targetRow, targetData))
                         .build());
-                warnings.add("Target key '" + targetEntry.getKey()
-                        + "' not present in source row. Target row: " + targetValues);
             }
         }
 
