@@ -22,7 +22,9 @@ public class ExcelCompareProperties {
     private String sourceDirectory;
 
     /**
-     * Directory containing the target (generated) Excel files.
+     * Directory containing the target (generated) Excel files. The name of a generated file only
+     * has to contain the source file name: {@code customer.xlsx} may be represented by
+     * {@code customer.xlsx} or by {@code customer_127733_0.xlsx}.
      */
     private String targetDirectory;
 }

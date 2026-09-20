@@ -18,15 +18,21 @@ public interface ExcelCompareService {
      * Compares the given Excel file (source vs target) sheet by sheet, using the configured
      * unique-key columns to associate rows. Sheets without a {@code key} configuration are skipped.
      *
-     * @param filename file name, e.g. {@code customer.xlsx}
+     * <p>The target file is resolved by name inside the target directory and does not have to match
+     * the source file name exactly: a target file whose name without extension contains the source
+     * file name without extension is accepted, e.g. {@code customer_127733_0.xlsx} for
+     * {@code customer.xlsx}.
+     *
+     * @param filename file name of the source file, e.g. {@code customer.xlsx}
      * @return structured comparison result
      */
     ExcelCompareResponse compareFile(String filename);
 
     /**
-     * Compares every Excel file found in the source directory against the target directory.
+     * Compares every Excel file found in the source directory against the matching target file in
+     * the target directory (see {@link #compareFile(String)} for how the target file is resolved).
      *
-     * @return one structured comparison result per matched file
+     * @return one structured comparison result per source file
      */
     List<ExcelCompareResponse> compareAllFiles();
 }

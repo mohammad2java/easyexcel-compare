@@ -48,6 +48,12 @@ import io.md2java.easyexcel.service.ExcelCompareService;
  * (generated) version, sheet by sheet. Rows are associated by the unique-key column that
  * is configured per file and sheet. Columns listed in the {@code ignore-columns} property
  * are excluded from the comparison.
+ *
+ * <p>The target counterpart of a source file is looked up by name in the target directory: the
+ * target file name without extension must contain the source file name without extension, so
+ * {@code customer.xlsx} matches {@code customer.xlsx} as well as generated names such as
+ * {@code customer_127733_0.xlsx}. Comparison settings are always resolved with the
+ * <em>source</em> file name (e.g. {@code customer.xlsx.Sheet1.key}).
  */
 @Service
 public class ExcelCompareServiceImpl implements ExcelCompareService {
@@ -57,6 +63,12 @@ public class ExcelCompareServiceImpl implements ExcelCompareService {
     private static final String DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern(DATE_TIME_PATTERN);
     private static final Set<String> SUPPORTED_EXTENSIONS = Set.of(".xlsx", ".xls", ".csv");
+
+    /**
+     * Resolves target files whose name is not identical to the source file name
+     * (e.g. {@code customer_127733_0.xlsx} for {@code customer.xlsx}).
+     */
+    private static final TargetFileResolver TARGET_FILE_RESOLVER = new TargetFileResolver();
 
     private final ExcelCompareProperties properties;
     private final ComparisonConfig config;
@@ -102,24 +114,36 @@ public class ExcelCompareServiceImpl implements ExcelCompareService {
     }
 
     private ExcelCompareResponse doCompareFile(String filename) {
-        File sourceFile = resolveDirectory(properties.getSourceDirectory(), "source").resolve(filename).toFile();
-        File targetFile = resolveDirectory(properties.getTargetDirectory(), "target").resolve(filename).toFile();
-
         if (isBlank(filename)) {
-            return errorResponse(filename, sourceFile, targetFile, "The filename must not be empty.");
+            return errorResponse(filename, "The filename must not be empty.");
         }
-        if (!sourceFile.exists()) {
-            return fileNotFoundResponse(filename, sourceFile, targetFile,
+
+        File sourceDirectory = resolveDirectory(properties.getSourceDirectory(), "source").toFile();
+        File targetDirectory = resolveDirectory(properties.getTargetDirectory(), "target").toFile();
+        File expectedTargetFile = new File(targetDirectory, filename);
+
+        File sourceFile = new File(sourceDirectory, filename);
+        if (!sourceFile.isFile()) {
+            return fileNotFoundResponse(filename, sourceFile, expectedTargetFile,
                     "Source file not found: " + sourceFile.getAbsolutePath());
         }
-        if (!targetFile.exists()) {
-            return fileNotFoundResponse(filename, sourceFile, targetFile,
-                    "Target file not found: " + targetFile.getAbsolutePath());
+        if (!targetDirectory.isDirectory()) {
+            return fileNotFoundResponse(filename, sourceFile, expectedTargetFile,
+                    "Target directory not found: " + targetDirectory.getAbsolutePath());
         }
 
+        TargetFileResolver.Match targetMatch = TARGET_FILE_RESOLVER.resolve(filename, listExcelFiles(targetDirectory));
+        if (!targetMatch.isFound()) {
+            return fileNotFoundResponse(filename, sourceFile, expectedTargetFile,
+                    "Target file not found in " + targetDirectory.getAbsolutePath()
+                            + ": expected a target file whose name without extension contains '"
+                            + TargetFileResolver.baseName(filename) + "'.");
+        }
+
+        File targetFile = targetMatch.getFile();
         List<SheetComparisonResult> sheets = compareSheets(sourceFile, targetFile, filename);
 
-        List<String> messages = new ArrayList<>();
+        List<String> messages = new ArrayList<>(targetMatch.getNotes());
         ComparisonStatus fileStatus = aggregateStatus(sheets, messages);
         if (fileStatus != ComparisonStatus.MATCH) {
             messages.add(0, "Difference(s) found in file: " + filename);
@@ -134,17 +158,26 @@ public class ExcelCompareServiceImpl implements ExcelCompareService {
                 .build();
     }
 
-    private ExcelCompareResponse errorResponse(String filename, File sourceFile, File targetFile, String message) {
+    /**
+     * Response for a comparison that could not be started at all, e.g. because the requested file
+     * name is blank.
+     */
+    private ExcelCompareResponse errorResponse(String filename, String message) {
         return ExcelCompareResponse.builder()
                 .filename(filename)
-                .sourceFile(absolutePath(sourceFile))
-                .targetFile(absolutePath(targetFile))
+                .sourceFile("")
+                .targetFile("")
                 .status(ComparisonStatus.ERROR)
                 .messages(new ArrayList<>(Collections.singletonList(message)))
                 .sheets(new ArrayList<>())
                 .build();
     }
 
+    /**
+     * Response for a missing source file, target directory or target file. The paths in the response
+     * are the expected locations; for the target file the exact-name location is reported because the
+     * actual file is resolved by name (see {@link TargetFileResolver}).
+     */
     private ExcelCompareResponse fileNotFoundResponse(String filename, File sourceFile, File targetFile,
                                                       String message) {
         return ExcelCompareResponse.builder()
