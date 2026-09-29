@@ -74,14 +74,32 @@ public class SimpleCompareEngine implements CompareEngine {
             log.warn("Directory '{}' does not exist.", directory);
             return files;
         }
-        File[] candidates = directory.listFiles((dir, name) ->
-                name.toLowerCase().startsWith(entity.toLowerCase()) && name.toLowerCase().endsWith(EXCEL_EXTENSION));
+        File[] candidates = directory.listFiles((dir, name) -> matchesEntity(name, entity));
         if (candidates != null) {
             for (File file : candidates) {
                 files.add(file);
             }
         }
         return files;
+    }
+
+    /**
+     * A file belongs to an entity when its name starts with the entity name, is followed only by
+     * numeric characters or underscores (e.g. {@code customer_100003_0.xlsx}) and ends with
+     * {@code .xlsx}. Names such as {@code customer_payment.xlsx} are therefore excluded.
+     */
+    private boolean matchesEntity(String fileName, String entity) {
+        String lowerName = fileName.toLowerCase();
+        String lowerEntity = entity.toLowerCase();
+        if (!lowerName.endsWith(EXCEL_EXTENSION)) {
+            return false;
+        }
+        String baseName = lowerName.substring(0, lowerName.length() - EXCEL_EXTENSION.length());
+        if (!baseName.startsWith(lowerEntity)) {
+            return false;
+        }
+        String suffix = baseName.substring(lowerEntity.length());
+        return suffix.chars().allMatch(ch -> Character.isDigit(ch) || ch == '_');
     }
 
     private SheetData load(List<File> files, String sheetName,
