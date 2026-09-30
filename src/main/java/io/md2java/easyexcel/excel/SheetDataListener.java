@@ -28,16 +28,18 @@ public class SheetDataListener extends AnalysisEventListener<Map<Integer, String
     private final int headerRowIndex;
     private final List<String> uniqueRowKey;
     private final List<String> ignoreColumns;
+    private final String fileName;
 
     private final SheetData sheetData = new SheetData();
     private final List<String> headers = new ArrayList<>();
 
     public SheetDataListener(String sheetName, int headerRowIndex,
-                             List<String> uniqueRowKey, List<String> ignoreColumns) {
+                             List<String> uniqueRowKey, List<String> ignoreColumns, String fileName) {
         this.sheetName = sheetName;
         this.headerRowIndex = headerRowIndex;
         this.uniqueRowKey = uniqueRowKey == null ? List.of() : uniqueRowKey;
         this.ignoreColumns = ignoreColumns == null ? List.of() : ignoreColumns;
+        this.fileName = fileName;
     }
 
     @Override
@@ -74,7 +76,7 @@ public class SheetDataListener extends AnalysisEventListener<Map<Integer, String
             return;
         }
         if (!sheetData.containsKey(key)) {
-            sheetData.put(key, row, rowNumber);
+            sheetData.put(key, row, rowNumber, fileName);
         } else {
             log.warn("[{}] duplicate unique-row-key '{}' found at row {}, keeping the first occurrence",
                     sheetName, key, rowNumber);

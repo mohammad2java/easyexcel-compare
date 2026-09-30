@@ -16,7 +16,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 public class EasyexcelcomparatorApplication implements CommandLineRunner {
 
     private final CompareEngine compareEngine;
-    private final CompareProperties compareProperties;
 
 
     public static void main(String[] args) {

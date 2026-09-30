@@ -11,10 +11,12 @@ public class SheetData {
 
     private final Map<String, Map<String, Object>> rows = new LinkedHashMap<>();
     private final Map<String, Integer> rowNumbers = new LinkedHashMap<>();
+    private final Map<String, String> fileNames = new LinkedHashMap<>();
 
-    public void put(String key, Map<String, Object> row, int rowNumber) {
+    public void put(String key, Map<String, Object> row, int rowNumber, String fileName) {
         rows.put(key, row);
         rowNumbers.put(key, rowNumber);
+        fileNames.put(key, fileName);
     }
 
     public boolean containsKey(String key) {
@@ -29,12 +31,20 @@ public class SheetData {
         return rowNumbers.get(key);
     }
 
+    public String getFileName(String key) {
+        return fileNames.get(key);
+    }
+
     public Map<String, Map<String, Object>> getRows() {
         return rows;
     }
 
     public Map<String, Integer> getRowNumbers() {
         return rowNumbers;
+    }
+
+    public Map<String, String> getFileNames() {
+        return fileNames;
     }
 
     public int size() {
