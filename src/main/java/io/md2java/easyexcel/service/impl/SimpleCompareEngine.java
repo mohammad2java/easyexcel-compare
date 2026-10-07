@@ -1,6 +1,8 @@
 package io.md2java.easyexcel.service.impl;
 
 import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.ExcelReader;
+import com.alibaba.excel.read.metadata.ReadSheet;
 import io.md2java.easyexcel.config.CompareProperties;
 import io.md2java.easyexcel.excel.SheetData;
 import io.md2java.easyexcel.excel.SheetDataListener;
@@ -144,20 +146,57 @@ public class SimpleCompareEngine implements CompareEngine {
         return merged;
     }
 
-    private SheetData loadFile(File file, String sheetName,
+    private SheetData loadFile(File file, String sheetKey,
                                CompareProperties.SheetConfig sheetConfig, String side) {
-        SheetDataListener listener = new SheetDataListener(sheetName, sheetConfig.getHeaderRowIndex(),
+        SheetDataListener listener = new SheetDataListener(sheetKey, sheetConfig.getHeaderRowIndex(),
                 sheetConfig.getUniqueRowKey(), sheetConfig.getIgnoreColumns(), file.getName());
-        try {
-            EasyExcel.read(file, listener)
-                    .headRowNumber(sheetConfig.getHeaderRowIndex())
-                    .sheet(sheetName)
-                    .doRead();
+        try (ExcelReader reader = EasyExcel.read(file, listener)
+                .headRowNumber(sheetConfig.getHeaderRowIndex())
+                .build()) {
+            ReadSheet readSheet = resolveSheet(reader, sheetKey);
+            if (readSheet == null) {
+                log.error("[{}] sheet '{}' not found in {} file '{}', skipping.",
+                        sheetKey, sheetKey, side, file.getName());
+                return listener.getSheetData();
+            }
+            reader.read(readSheet);
         } catch (Exception ex) {
             log.error("[{}] failed to read sheet '{}' from {} file '{}': {}",
-                    sheetName, sheetName, side, file.getName(), ex.getMessage());
+                    sheetKey, sheetKey, side, file.getName(), ex.getMessage());
         }
         return listener.getSheetData();
+    }
+
+    /**
+     * Resolves the configured sheet key against the sheets of the given reader. A purely numeric
+     * key (e.g. {@code 1}, {@code 2}) is treated as a 1-based sheet index, any other value is
+     * treated as a sheet name.
+     */
+    private ReadSheet resolveSheet(ExcelReader reader, String sheetKey) {
+        List<ReadSheet> sheets = reader.excelExecutor().sheetList();
+        Integer index = parseSheetIndex(sheetKey);
+        if (index != null) {
+            if (index < 1 || index > sheets.size()) {
+                log.error("Sheet index {} is out of range, the workbook has {} sheet(s).", index, sheets.size());
+                return null;
+            }
+            return sheets.get(index - 1);
+        }
+        return sheets.stream()
+                .filter(sheet -> sheetKey.equals(sheet.getSheetName()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private Integer parseSheetIndex(String sheetKey) {
+        if (sheetKey == null || sheetKey.isBlank()) {
+            return null;
+        }
+        try {
+            return Integer.valueOf(sheetKey.trim());
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 
     /**

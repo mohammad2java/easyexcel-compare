@@ -6,6 +6,21 @@ how to use -
     checkout project 
     use build.sh and use start.bat or start.sh to run the project
 
+## sheet selection
+
+Sheets are configured under `app.files.recon.<entity>.<sheet>.*`. The `<sheet>` key can be either
+the sheet name or its 1-based position in the workbook:
+
+```properties
+# by sheet name
+app.files.recon.customer.Sheet1.unique-row-key=uniqueId,Name
+
+# by 1-based sheet index (1 = first sheet, 2 = second sheet, ...)
+app.files.recon.customer.1.unique-row-key=uniqueId,Name
+```
+
+A purely numeric key is treated as a sheet index; any other value is treated as a sheet name.
+
 ## comparison rules
 
 * The comparison is driven by the **source** data only.
